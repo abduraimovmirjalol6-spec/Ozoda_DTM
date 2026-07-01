@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🎓 Ozoda DTM</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--pink:#ff6b9d;--purple:#c77dff;--blue:#4cc9f0;--gold:#ffd60a;--green:#06d6a0;--dark:#0d0d1a;--card:#16163a;}
+body{background:var(--dark);min-height:100vh;font-family:'Nunito',sans-serif;display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding:14px 12px 24px;}
+#stars{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;}
+.star{position:absolute;background:white;border-radius:50%;animation:twinkle linear infinite;}
+@keyframes twinkle{0%,100%{opacity:.2;transform:scale(1)}50%{opacity:1;transform:scale(1.5)}}
+#game{position:relative;z-index:1;width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;gap:10px;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(30px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
+@keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}100%{transform:translateX(0)}}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes jump{0%,100%{transform:translateY(0) scale(1)}40%{transform:translateY(-14px) scale(1.05)}60%{transform:translateY(-6px) scale(.98)}}
+
+/* INTRO */
+#intro{text-align:center;animation:fadeIn .6s ease;width:100%;}
+#intro-avatar{margin-bottom:8px;}
+.intro-title{font-size:1.5rem;font-weight:900;background:linear-gradient(135deg,var(--pink),var(--purple),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:4px;}
+.intro-sub{color:#888;font-size:.8rem;margin-bottom:14px;line-height:1.5;}
+.subject-info{display:flex;justify-content:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.subj-chip{background:#16163a;border:1.5px solid #2a2a5a;border-radius:20px;padding:5px 12px;font-size:.7rem;font-weight:700;}
+.start-btn{background:linear-gradient(135deg,var(--pink),var(--purple));border:none;border-radius:16px;padding:14px 40px;color:white;font-size:1rem;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer;letter-spacing:1px;box-shadow:0 4px 24px rgba(199,125,255,.4);}
+.start-btn:active{transform:scale(.97);}
+
+/* HUD */
+#hud{width:100%;display:flex;align-items:center;gap:8px;}
+.subject-badge{padding:4px 10px;border-radius:20px;font-size:.66rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;}
+.hud-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.hud-stat .val{font-size:1.05rem;font-weight:900;color:var(--gold);}
+.hud-stat .lbl{font-size:.58rem;color:#555;letter-spacing:1px;text-transform:uppercase;}
+
+/* Avatar row */
+#av-row{display:flex;align-items:center;gap:10px;width:100%;}
+#av-canvas-wrap{position:relative;flex-shrink:0;}
+#mini-bubble{position:absolute;top:-30px;left:50%;transform:translateX(-50%);background:white;border-radius:10px;padding:4px 8px;font-size:.62rem;font-weight:700;color:#333;white-space:nowrap;opacity:0;transition:opacity .3s;box-shadow:0 2px 8px rgba(0,0,0,.3);}
+.brain-bar-wrap{background:#1e1e40;border-radius:20px;height:9px;width:100%;overflow:hidden;}
+.brain-bar{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--pink),var(--purple));transition:width .5s cubic-bezier(.34,1.56,.64,1);}
+.brain-level-label{text-align:center;font-size:.68rem;font-weight:700;margin-top:3px;}
+
+/* Timer */
+#timer-wrap{width:100%;display:flex;align-items:center;gap:8px;}
+#timer-bar-bg{flex:1;height:6px;background:#1e1e40;border-radius:10px;overflow:hidden;}
+#timer-bar{height:100%;border-radius:10px;background:linear-gradient(90deg,var(--green),var(--blue));transition:width 1s linear,background .5s;}
+#timer-num{font-size:.85rem;font-weight:800;color:var(--blue);min-width:20px;text-align:right;}
+
+/* Question card */
+#qcard{width:100%;background:var(--card);border-radius:18px;padding:16px;border:1.5px solid #2a2a5a;box-shadow:0 8px 32px rgba(0,0,0,.4);animation:slideUp .4s cubic-bezier(.34,1.56,.64,1);}
+.q-num{font-size:.65rem;color:#555;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
+.q-text{font-size:.92rem;font-weight:700;color:#e8e8ff;line-height:1.45;margin-bottom:12px;}
+.options{display:flex;flex-direction:column;gap:7px;}
+.opt{background:#1e1e40;border:1.5px solid #2a2a5a;border-radius:13px;padding:10px 13px;color:#c8c8e8;font-size:.82rem;font-weight:600;font-family:'Nunito',sans-serif;cursor:pointer;text-align:left;transition:all .2s;-webkit-tap-highlight-color:transparent;}
+.opt:hover{border-color:var(--purple);color:white;background:#24245a;}
+.opt.correct{background:#063a28;border-color:var(--green);color:var(--green);animation:pulse .4s;}
+.opt.wrong{background:#3a0620;border-color:var(--pink);color:var(--pink);animation:shake .4s;}
+.opt:disabled{cursor:default;}
+
+#feedback{width:100%;padding:10px 13px;border-radius:13px;font-size:.78rem;font-weight:700;display:none;animation:fadeIn .3s;line-height:1.4;}
+#feedback.good{background:#063a28;border:1.5px solid var(--green);color:var(--green);}
+#feedback.bad{background:#3a0620;border:1.5px solid var(--pink);color:var(--pink);}
+
+#next-btn{background:linear-gradient(135deg,var(--pink),var(--purple));border:none;border-radius:13px;padding:12px 30px;color:white;font-size:.86rem;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer;letter-spacing:1px;display:none;box-shadow:0 4px 20px rgba(199,125,255,.4);width:100%;}
+#next-btn:active{transform:scale(.97);}
+
+/* WIN */
+#win-screen{text-align:center;display:none;width:100%;flex-direction:column;align-items:center;gap:10px;}
+.trophy{font-size:3.5rem;animation:bounce 1s infinite;}
+.win-title{font-size:1.6rem;font-weight:900;background:linear-gradient(135deg,var(--gold),var(--pink),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.win-msg{color:#aaa;font-size:.85rem;line-height:1.6;}
+.win-stats{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;}
+.win-stat{background:var(--card);border:1.5px solid #2a2a5a;border-radius:13px;padding:9px 16px;text-align:center;}
+.win-stat .v{font-size:1.4rem;font-weight:900;color:var(--gold);}
+.win-stat .l{font-size:.6rem;color:#555;letter-spacing:1px;text-transform:uppercase;margin-top:2px;}
+.certificate{background:linear-gradient(135deg,#1a1a3e,#2a1a4e);border:2px solid var(--gold);border-radius:15px;padding:13px;width:100%;}
+.cert-title{color:var(--gold);font-size:.65rem;letter-spacing:3px;text-transform:uppercase;margin-bottom:6px;}
+.cert-name{color:white;font-size:1.15rem;font-weight:900;margin-bottom:4px;}
+.cert-desc{color:#aaa;font-size:.74rem;line-height:1.5;}
+
+.cp{position:fixed;width:8px;height:8px;border-radius:2px;pointer-events:none;z-index:999;animation:fall linear forwards;}
+@keyframes fall{0%{transform:translateY(-20px) rotate(0);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+</style>
+</head>
+<body>
+<div id="stars"></div>
+<div id="game">
+
+<!-- INTRO -->
+<div id="intro">
+  <div id="intro-avatar">
+    <canvas id="bigAvatar" width="130" height="148"></canvas>
+  </div>
+  <div class="intro-title">Ozoda DTM 🎓</div>
+  <div class="intro-sub">DTM imtihoniga tayyorgarlik o'yini!</div>
+  <div class="subject-info">
+    <span class="subj-chip" style="color:#ff6b9d">⚖️ Huquq — 30 ta</span>
+    <span class="subj-chip" style="color:#06d6a0">🔢 Matematika — 10 ta</span>
+  </div>
+  <button class="start-btn" onclick="startGame()">Boshlash ✨</button>
+</div>
+
+<!-- QUIZ -->
+<div id="quiz" style="display:none;width:100%;flex-direction:column;align-items:center;gap:9px;">
+  <div id="hud">
+    <div class="subject-badge" id="subj-badge">📚 Fan</div>
+    <div class="hud-right">
+      <div class="hud-stat"><div class="val" id="score-val">0</div><div class="lbl">Ball</div></div>
+      <div class="hud-stat"><div class="val" id="q-counter">1/40</div><div class="lbl">Savol</div></div>
+    </div>
+  </div>
+
+  <div id="av-row">
+    <div id="av-canvas-wrap">
+      <canvas id="miniAvatar" width="62" height="70"></canvas>
+      <div id="mini-bubble"><span id="mini-bubble-text">Fikrlayman...</span></div>
+    </div>
+    <div style="flex:1;">
+      <div class="brain-bar-wrap"><div class="brain-bar" id="brain-bar" style="width:3%"></div></div>
+      <div class="brain-level-label" id="brain-lbl">Boshlang'ich daraja</div>
+    </div>
+  </div>
+
+  <div id="timer-wrap">
+    <div id="timer-bar-bg"><div id="timer-bar" style="width:100%"></div></div>
+    <div id="timer-num">20</div>
+  </div>
+
+  <div id="qcard">
+    <div class="q-num" id="q-num">SAVOL 1</div>
+    <div class="q-text" id="q-text"></div>
+    <div class="options" id="options"></div>
+  </div>
+
+  <div id="feedback"></div>
+  <button id="next-btn" onclick="nextQ()">Keyingi Savol →</button>
+</div>
+
+<!-- WIN -->
+<div id="win-screen">
+  <div class="trophy">🏆</div>
+  <canvas id="winAvatar" width="110" height="125"></canvas>
+  <div class="win-title">Tabriklaymiz, Ozoda!</div>
+  <div class="win-msg">Barcha savollarni yechdingiz!<br>DTM ga tayyorsiz! 💪✨</div>
+  <div class="win-stats">
+    <div class="win-stat"><div class="v" id="w-score">0</div><div class="l">Ball</div></div>
+    <div class="win-stat"><div class="v" id="w-correct">0</div><div class="l">To'g'ri</div></div>
+    <div class="win-stat" style="border-color:#ff6b9d44"><div class="v" id="w-wrong" style="color:#ff6b9d">0</div><div class="l">Xato</div></div>
+    <div class="win-stat"><div class="v" id="w-huquq">0</div><div class="l">Huquq</div></div>
+    <div class="win-stat"><div class="v" id="w-mat">0</div><div class="l">Matem.</div></div>
+  </div>
+  <div class="certificate">
+    <div class="cert-title">🎖️ Sertifikat</div>
+    <div class="cert-name">Ozoda 🌸</div>
+    <div class="cert-desc">DTM tayyorgarlik testini yakunladi.<br>Huquq va Matematika fanlaridan bilim namoyish etdi!</div>
+  </div>
+  <button class="start-btn" onclick="restartGame()">Qaytadan O'ynash 🔄</button>
+</div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// SAVOLLAR BAZASI
+function shuffle(arr){return [...arr].sort(()=>Math.random()-.5);}
+// Har bir fan o'z arrayida. Yangi savol qo'shish uchun shu formatda yozing:
+// {q:"Savol matni?", opts:["A","B","C","D"], ans:0, exp:"Izoh"}
+// ans — to'g'ri javobning indeksi (0=A, 1=B, 2=C, 3=D)
+// ═══════════════════════════════════════════════════════════════════
+
+const huquqSavollari = [
+  {q:"O'zbekiston Respublikasi Konstitutsiyasi qaysi yilda qabul qilingan?",opts:["1991-yil","1992-yil","1993-yil","1994-yil"],ans:1,exp:"Konstitutsiya 1992-yil 8-dekabrda qabul qilingan."},
+  {q:"O'zbekistonda saylov huquqiga necha yoshdan ega bo'linadi?",opts:["16 yosh","18 yosh","21 yosh","25 yosh"],ans:1,exp:"18 yoshga to'lgan fuqarolar saylov huquqiga ega bo'ladi."},
+  {q:"O'zbekiston Respublikasi Prezidenti necha yilga saylanadi?",opts:["4 yil","5 yil","6 yil","7 yil"],ans:3,exp:"Prezident 7 yil muddatga saylanadi."},
+  {q:"Fuqarolik huquqining asosiy predmeti nima?",opts:["Jinoiy javobgarlik","Mulkiy munosabatlar","Mehnat munosabatlari","Soliq munosabatlari"],ans:1,exp:"Fuqarolik huquqi mulkiy va shaxsiy nomulkiy munosabatlarni tartibga soladi."},
+  {q:"Huquqiy davlatning asosiy belgisi nima?",opts:["Kuchli armiya","Qonun ustuvorligi","Ko'p partiyalik","Erkin bozor"],ans:1,exp:"Huquqiy davlatning asosiy belgisi — qonun ustuvorligi."},
+  {q:"O'zbekiston Respublikasi Oliy Majlisi necha palatadan iborat?",opts:["1 ta","2 ta","3 ta","4 ta"],ans:1,exp:"Oliy Majlis Qonunchilik palatasi va Senatdan iborat — 2 palata."},
+  {q:"Jinoyat sodir etgan shaxsning javobgarlikka tortilish yoshi necha yoshdan boshlanadi (umumiy holatda)?",opts:["14 yosh","16 yosh","18 yosh","21 yosh"],ans:1,exp:"Umumiy qoidaga ko'ra jinoiy javobgarlik 16 yoshdan boshlanadi, ayrim og'ir jinoyatlar uchun 14 yoshdan."},
+  {q:"Mehnat shartnomasi necha kun oldin ogohlantirib bekor qilinishi mumkin (xodim tomonidan)?",opts:["7 kun","14 kun","30 kun","60 kun"],ans:1,exp:"Xodim ish beruvchini 2 hafta (14 kun) oldin ogohlantirishi kerak."},
+  {q:"Nikoh yoshi O'zbekistonda (umumiy holatda) nechchi?",opts:["16 yosh","17 yosh","18 yosh","21 yosh"],ans:2,exp:"Nikohlanish yoshi 18 yosh — ham erkak, ham ayol uchun."},
+  {q:"Davlat boshqaruvining qaysi shakli O'zbekistonda qabul qilingan?",opts:["Monarxiya","Respublika","Federatsiya","Konfederatsiya"],ans:1,exp:"O'zbekiston — prezidentlik respublikasi."},
+  {q:"O'zbekiston Respublikasi Konstitutsiyasiga ko'ra, davlat hokimiyatining birligi prinsipi nimani anglatadi?",opts:["Hokimiyat tarmoqlarining bir-biriga bo'ysunishini","Hokimiyat tarmoqlarining o'zaro tiyib turish tizimiga asoslanishini","Barcha hokimiyat vakolatlarining Prezident qo'lida jamlanishini","Hokimiyat tarmoqlarining mustaqil emasligini"],ans:1,exp:"Hokimiyat birligi prinsipi — qonun chiqaruvchi, ijro etuvchi va sud hokimiyati o'zaro tiyib turish (check and balance) tizimi asosida ishlashini anglatadi."},
+  {q:"Fuqarolik huquqiy layoqati nima?",opts:["Fuqaroning o'z harakatlari bilan huquq va majburiyatlarni vujudga keltirish qobiliyati","Fuqarolik huquq va majburiyatlariga ega bo'lish layoqati","Shaxsning jinoiy javobgarlikka tortilish qobiliyati","Shaxsning davlat xizmatiga kirish huquqi"],ans:1,exp:"Huquqiy layoqat — fuqarolik huquq va majburiyatlariga ega bo'lish qobiliyati bo'lib, tug'ilgan paytdan boshlanadi (muomala layoqatidan farqli)."},
+  {q:"O'zbekiston Respublikasi Prezidentining vakolat muddati necha yil?",opts:["5 yil","6 yil","7 yil","4 yil"],ans:2,exp:"Prezident 7 yil muddatga saylanadi."},
+  {q:"Quyidagilardan qaysi biri Oliy Majlis Qonunchilik palatasining mutlaq vakolatiga kiradi?",opts:["Davlat budjetini tasdiqlash","Prezidentni lavozimidan chetlashtirish","Xalqaro shartnomalarni ratifikatsiya qilish","Vazirlar Mahkamasining hisobotini eshitish"],ans:0,exp:"Davlat byudjetini ko'rib chiqish va tasdiqlash — Qonunchilik palatasining mutlaq vakolatiga kiradi."},
+  {q:"Mulk huquqi tarkibiga qaysi vakolatlar kiradi?",opts:["Egalik qilish, foydalanish va tasarruf etish","Faqat foydalanish va egalik qilish","Sotish va hadya qilish","Faqat foydalanish huquqi"],ans:0,exp:"Mulk huquqining 3 ta klassik vakolati: egalik qilish, foydalanish va tasarruf etish."},
+  {q:"Qonun loyihasini qonuniy kuchga ega bo'lishi uchun oxirgi bosqich nima?",opts:["Qonunchilik palatasida qabul qilinishi","Senat tomonidan ma'qullanishi","Prezident tomonidan imzolanishi va e'lon qilinishi","Vazirlar Mahkamasi tomonidan tasdiqlanishi"],ans:2,exp:"Qonun Prezident tomonidan imzolanib, rasmiy e'lon qilingandan keyingina yuridik kuchga ega bo'ladi."},
+  {q:"O'zbekiston Respublikasida sud hokimiyati qanday amalga oshiriladi?",opts:["Faqat Oliy sud tomonidan","Konstitutsiyaviy sud tomonidan","Sudlar tomonidan qonunga muvofiq","Prokuratura tomonidan"],ans:2,exp:"Sud hokimiyati mustaqil bo'lib, faqat qonunga muvofiq sudlar tomonidan amalga oshiriladi."},
+  {q:"Mehnat shartnomasi qaysi shaklda tuzilishi shart?",opts:["Faqat og'zaki","Yozma shaklda","Notarial tasdiqlangan holda","Ixtiyoriy shaklda"],ans:1,exp:"Mehnat shartnomasi qonunga ko'ra yozma shaklda tuzilishi shart."},
+  {q:"Inson huquqlari umumjahon deklaratsiyasi qaysi tashkilot tomonidan qabul qilingan?",opts:["Yevropa Ittifoqi","BMT","YEXHT","MDH"],ans:1,exp:"Inson huquqlari umumjahon deklaratsiyasi 1948-yilda BMT Bosh Assambleyasi tomonidan qabul qilingan."},
+  {q:"Ma'muriy huquqbuzarliklar to'g'risidagi ishlar bo'yicha qaror qabul qilish vakolati asosan kimga tegishli?",opts:["Sudlarga va vakolatli organlarga","Faqat politsiyaga","Faqat prokurorga","Fuqarolarning o'zini o'zi boshqarish organlariga"],ans:0,exp:"Ma'muriy huquqbuzarlik ishlari sudlar va qonunda belgilangan boshqa vakolatli organlar tomonidan ko'riladi."},
+  {q:"O'zbekiston Respublikasi Konstitutsiyasiga binoan, kimlar sud huquqidan foydalanishi mumkin?",opts:["Faqat O'zbekiston Respublikasi fuqarolari","Barcha fuqarolar, shuningdek, chet el fuqarolari va fuqaroligi bo'lmagan shaxslar","Faqat rasmiy tashkilotlar","Faqat voyaga yetgan shaxslar"],ans:1,exp:"Sud himoyasi huquqi barcha — fuqarolar, chet el fuqarolari va fuqaroligi bo'lmagan shaxslarga ham kafolatlangan."},
+  {q:"Quyidagilardan qaysi biri davlat hokimiyati vakillik organi hisoblanadi?",opts:["Vazirlar Mahkamasi","Oliy Majlis","Prokuratura","Sud tizimi"],ans:1,exp:"Oliy Majlis — O'zbekistonning oliy davlat vakillik organi."},
+  {q:"Davlat xizmatchisi o'z xizmat vazifalarini bajarishda kimga bo'ysunadi?",opts:["Siyosiy partiyalarga","Qonunga","O'z rahbarining shaxsiy ko'rsatmalariga","Xalqaro tashkilotlar tavsiyalariga"],ans:1,exp:"Davlat xizmatchisi faoliyatida birinchi navbatda qonunga bo'ysunadi."},
+  {q:"O'zbekiston Respublikasida jinoyat qonunlarini kim qabul qiladi?",opts:["Prezident","Oliy Majlis","Oliy sud","Adliya vazirligi"],ans:1,exp:"Jinoyat qonunlari, shu jumladan Jinoyat kodeksi, Oliy Majlis tomonidan qabul qilinadi."},
+  {q:"Sud majlisi qaysi tilda olib boriladi?",opts:["Faqat davlat tilida","Sudya belgilagan tilda","Ishtirokchilar tushunadigan tilda (tarjimon bilan)","Faqat rus yoki o'zbek tilida"],ans:2,exp:"Sud majlisi ishtirokchilarga tushunarli tilda olib boriladi, zarur bo'lsa tarjimon ta'minlanadi."},
+  {q:"O'zbekiston Respublikasining davlat ramzlari qaysilar?",opts:["Bayroq, Gerb, Madhiya","Konstitutsiya, Bayroq, Gerb","Prezident, Bayroq, Gerb","Davlat tili, Bayroq, Gerb"],ans:0,exp:"Davlat ramzlari — Bayroq, Gerb va Davlat Madhiyasi."},
+  {q:"Jinoyat huquqida \"aybsiz zarar yetkazish\" (tasodif) nima deb ataladi?",opts:["Jinoyat","Kazus (tasodifiy qilmish)","Ma'muriy huquqbuzarlik","Intizomiy jazo"],ans:1,exp:"Kazus — shaxs oqibatlarni oldindan ko'ra olmagan va ko'rishi shart bo'lmagan tasodifiy zarar yetkazish holati, jinoyat hisoblanmaydi."},
+  {q:"O'zbekiston Respublikasida yer qanday mulk hisoblanadi?",opts:["Xususiy mulk","Umummilliy boylik, davlat mulki","Faqat chet el investorlari mulki","Jamoat tashkilotlari mulki"],ans:1,exp:"Konstitutsiyaga ko'ra yer, yer osti boyliklari, suv umummilliy boylik bo'lib, davlat mulki hisoblanadi."},
+  {q:"Huquqiy layoqat va muomala layoqati o'rtasidagi farq nimada?",opts:["Farqi yo'q, ikkalasi bir narsa","Huquqiy layoqat tug'ilgandan, muomala layoqati esa muayyan yoshdan boshlanadi","Huquqiy layoqat faqat voyaga yetgach paydo bo'ladi","Muomala layoqati faqat davlat xizmatchilarida bo'ladi"],ans:1,exp:"Huquqiy layoqat — tug'ilgan paytdan boshlanadi; muomala layoqati esa shaxs o'z harakatlari bilan huquq vujudga keltira oladigan yoshdan (odatda 18) boshlanadi."},
+  {q:"Konstitutsiyaga ko'ra, O'zbekiston Respublikasi Prezidenti kimning kafili hisoblanadi?",opts:["Inson huquq va erkinliklarining","Faqat davlat xavfsizligining","Faqat iqtisodiy barqarorlikning","Faqat qonun ustuvorligining"],ans:0,exp:"Konstitutsiyaga ko'ra Prezident inson va fuqaro huquq hamda erkinliklarining kafili hisoblanadi."},
+  {q:"O'zbekiston Respublikasi Konstitutsiyasiga ko'ra, davlat tili qaysi?",opts:["O'zbek tili","Rus tili","Ingliz tili","Qoraqalpoq tili"],ans:0,exp:"Konstitutsiyaga ko'ra O'zbekiston Respublikasining davlat tili — o'zbek tili."},
+  {q:"Qonunchilik tashabbusi huquqiga kimlar ega?",opts:["Prezident, Senat, Qonunchilik palatasi va boshqalar","Faqat Prezident","Faqat Oliy Majlis","Faqat Adliya vazirligi"],ans:0,exp:"Qonunchilik tashabbusi huquqi Prezident, Senat, Qonunchilik palatasi deputatlari va boshqa belgilangan sub'ektlarga tegishli."},
+  {q:"O'zbekiston Respublikasida inson huquqlari bo'yicha vakil (Ombudsman) kim tomonidan saylanadi?",opts:["Prezident tomonidan","Oliy Majlis tomonidan","Xalq tomonidan","Oliy sud tomonidan"],ans:1,exp:"Inson huquqlari bo'yicha Vakil (Ombudsman) Oliy Majlis tomonidan saylanadi."},
+  {q:"Nikoh qanday asosda tuziladi?",opts:["Majburlash orqali","Erkin va ixtiyoriy rozilik asosida","Faqat ota-ona kelishuvi bilan","Notarial idora qarori bilan"],ans:1,exp:"Nikoh erkak va ayolning erkin va ixtiyoriy roziligi asosida tuziladi."},
+  {q:"Fuqarolik kodeksiga ko'ra, shaxsning hayoti, sog'lig'i, shaxsiy daxlsizligi qanday huquqlar hisoblanadi?",opts:["Mulkiy huquqlar","Nomulkiy shaxsiy huquqlar","Mehnat huquqlari","Siyosiy huquqlar"],ans:1,exp:"Hayot, sog'liq, sha'n-sharaf kabi huquqlar nomulkiy shaxsiy huquqlar deyiladi."},
+  {q:"O'zbekiston Respublikasida eng yuqori yuridik kuchga ega bo'lgan hujjat qaysi?",opts:["Qonunlar","Prezident farmonlari","Konstitutsiya","Vazirlar Mahkamasi qarorlari"],ans:2,exp:"Konstitutsiya — davlatning oliy yuridik kuchga ega bo'lgan asosiy qonuni."},
+  {q:"Jinoyat huquqida javobgarlikni yengillashtiruvchi holatga nima kiradi?",opts:["Jinoyatni takroran sodir etish","Aybini bo'yniga olish va pushaymonlik","Jinoiy uyushma tarkibida bo'lish","Jabrlanuvchiga yordam ko'rsatmaslik"],ans:1,exp:"Aybiga iqror bo'lish va chin pushaymonlik — javobgarlikni yengillashtiruvchi holat hisoblanadi."},
+  {q:"Oliy Majlis Senati a'zolari necha yil muddatga saylanadi?",opts:["4 yil","5 yil","6 yil","7 yil"],ans:1,exp:"Senat a'zolari 5 yil muddatga saylanadi/tayinlanadi."},
+  {q:"Konstitutsiyaviy sud sudyalari kim tomonidan saylanadi?",opts:["Prezident","Oliy Majlis","Oliy sud","Xalq"],ans:1,exp:"Konstitutsiyaviy sud sudyalari Oliy Majlis tomonidan saylanadi (Prezident taqdimnomasiga ko'ra)."},
+  {q:"Ma'muriy javobgarlik to'g'risidagi kodeksda eng og'ir jazo turi qaysi?",opts:["Jarima","Ma'muriy qamoq","Ogohlantirish","Ish haqidan ushlab qolish"],ans:1,exp:"Ma'muriy qamoq — ma'muriy javobgarlik turlari ichida eng og'ir jazo hisoblanadi."},
+  {q:"Voyaga yetmagan shaxs deb necha yoshgacha bo'lgan shaxs tushuniladi?",opts:["16 yosh","18 yosh","21 yosh","14 yosh"],ans:1,exp:"18 yoshga to'lmagan shaxs voyaga yetmagan hisoblanadi."},
+  {q:"O'zbekiston Respublikasi Prezidentini muddatidan oldin lavozimidan chetlashtirish qaysi organ vakolati?",opts:["Oliy Majlis","Konstitutsiyaviy sud","Oliy sud","Prokuratura"],ans:0,exp:"Prezidentni muddatidan oldin lavozimdan chetlashtirish (impichment) Oliy Majlisning vakolatiga kiradi."},
+  {q:"Mehnat kodeksiga ko'ra, ish vaqtining davomiyligi qancha bo'lishi kerak?",opts:["Haftasiga 40 soatdan oshmasligi","Haftasiga 50 soat","Ish beruvchi belgilagan vaqt","Kuniga 12 soat"],ans:0,exp:"Mehnat qonunchiligiga ko'ra normal ish vaqti haftasiga 40 soatdan oshmasligi kerak."},
+  {q:"Fuqarolik sud ishlarini yuritish qaysi qonun bilan tartibga solinadi?",opts:["Jinoyat-protsessual kodeksi","Fuqarolik protsessual kodeksi","Ma'muriy javobgarlik kodeksi","Konstitutsiya"],ans:1,exp:"Fuqarolik ishlari bo'yicha sud yuritish Fuqarolik protsessual kodeksi bilan tartibga solinadi."},
+  {q:"Davlat budjeti loyihasini kim tayyorlaydi?",opts:["Prezident","Vazirlar Mahkamasi","Markaziy bank","Oliy Majlis"],ans:1,exp:"Davlat budjeti loyihasini Vazirlar Mahkamasi tayyorlaydi, keyin Oliy Majlis tasdiqlaydi."},
+  {q:"O'zbekiston Respublikasi Konstitutsiyasiga muvofiq, kim sud oldida teng?",opts:["Faqat fuqarolar","Barcha yuridik va jismoniy shaxslar","Faqat davlat xizmatchilari","Faqat erkaklar"],ans:1,exp:"Konstitutsiyaga ko'ra barcha jismoniy va yuridik shaxslar qonun va sud oldida teng."},
+  {q:"Sudya qaysi tamoyilga asoslanib qaror qabul qiladi?",opts:["Faqat qonun va o'z vijdoniga","Rahbariyat ko'rsatmasiga","Jamoatchilik fikriga","Prokuror talabiga"],ans:0,exp:"Sudya mustaqil bo'lib, faqat qonun va o'z ichki vijdoniga asoslanib qaror chiqaradi."},
+  {q:"Jinoyat sodir etgan shaxsga nisbatan qaysi prinsip qo'llanadi?",opts:["Aybsizlik prezumpsiyasi","Ayblilik prezumpsiyasi","Jazo muqarrarligi","O'zini o'zi himoya qilish"],ans:0,exp:"Aybsizlik prezumpsiyasi — ayb sudda qonuniy tartibda isbotlanmaguncha shaxs aybsiz hisoblanadi."},
+  {q:"O'zbekiston Respublikasi Prezidenti farmonlari nima hisoblanadi?",opts:["Qonun osti hujjati","Qonun","Sud hujjati","Xalqaro shartnoma"],ans:0,exp:"Prezident farmonlari qonun osti normativ-huquqiy hujjati hisoblanadi."},
+  {q:"Fuqarolarning o'zini o'zi boshqarish organlari qanday ataladi?",opts:["Mahalla","Departament","Agentlik","Vazirlik"],ans:0,exp:"O'zbekistonda fuqarolarning o'zini o'zi boshqarish organi — mahalla."},
+  {q:"O'zbekiston Respublikasi Konstitutsiyasiga ko'ra, kimlar saylash huquqiga ega?",opts:["18 yoshga to'lgan barcha fuqarolar","Faqat oliy ma'lumotli fuqarolar","Faqat davlat xizmatchilari","Faqat erkaklar"],ans:0,exp:"18 yoshga to'lgan barcha fuqarolar saylov huquqiga ega."},
+  {q:"Xalqaro shartnomalar O'zbekiston Respublikasining qonunchiligidan ustun turishi mumkinmi?",opts:["Ha, agar qonunda nazarda tutilgan bo'lsa","Yo'q, hech qachon","Faqat iqtisodiy shartnomalar","Faqat diplomatik shartnomalar"],ans:0,exp:"Agar xalqaro shartnoma milliy qonundan farqli qoidalarni belgilasa va bu qonunda nazarda tutilgan bo'lsa, shartnoma qoidalari qo'llaniladi."},
+  {q:"Qonun loyihasi Senat tomonidan qancha vaqt ichida ko'rib chiqilishi kerak?",opts:["15 kun","30 kun","60 kun","90 kun"],ans:2,exp:"Qonunchilik palatasi qabul qilgan qonun loyihasi Senat tomonidan 60 kun ichida ko'rib chiqiladi."},
+  {q:"O'zbekiston Respublikasida siyosiy partiyalarning asosiy vazifasi nima?",opts:["Hokimiyatni egallash","Fuqarolarning siyosiy irodasini ifodalash","Faqat biznes bilan shug'ullanish","Faqat xalqaro aloqalar o'rnatish"],ans:1,exp:"Siyosiy partiyalar fuqarolarning siyosiy irodasini ifodalash va shakllantirish vazifasini bajaradi."},
+  {q:"Mulk huquqini himoya qilish qaysi organ zimmasida?",opts:["Sud","Prokuratura","Politsiya","Soliq idorasi"],ans:0,exp:"Mulk huquqi buzilgan taqdirda asosiy himoya vositasi — sudga murojaat qilish."},
+  {q:"O'zbekiston Respublikasi Prezidenti qancha muddatga saylanadi?",opts:["5 yil","6 yil","7 yil","4 yil"],ans:2,exp:"Prezident 7 yil muddatga saylanadi."},
+  {q:"Jinoyat huquqida javobgarlikni og'irlashtiruvchi holatlardan biri qaysi?",opts:["Birinchi marta jinoyat sodir etish","Jinoyatni mast holda sodir etish","Pushaymonlik","Jabrlanuvchiga yordam berish"],ans:1,exp:"Mast holda jinoyat sodir etish javobgarlikni og'irlashtiruvchi holatlardan biri bo'lishi mumkin."},
+  {q:"Oliy Majlis palatalarining qo'shma majlislarida nimalar ko'rib chiqiladi?",opts:["Prezidentning murojaatlari va muhim masalalar","Faqat budjet masalalari","Faqat xalqaro shartnomalar","Faqat sud masalalari"],ans:0,exp:"Qo'shma majlislarda Prezidentning Oliy Majlisga murojaatlari va boshqa muhim umummilliy masalalar ko'rib chiqiladi."},
+  {q:"O'zbekiston Respublikasida fuqarolik pasporti qachondan beriladi?",opts:["14 yoshdan","16 yoshdan","18 yoshdan","21 yoshdan"],ans:1,exp:"Fuqarolik pasporti 16 yoshga to'lganda beriladi."},
+  {q:"Ma'muriy huquqbuzarlik to'g'risidagi bayonnomani kim tuzadi?",opts:["Vakolatli organ mansabdor shaxsi","Sudya","Prokuror","Advokat"],ans:0,exp:"Ma'muriy huquqbuzarlik bayonnomasini qonunda belgilangan vakolatli organ mansabdor shaxsi tuzadi."},
+  {q:"Mehnat shartnomasini bekor qilishning asosiy sababi nima bo'lishi mumkin?",opts:["Tomonlarning kelishuvi","Ishchining xohishi","Ish beruvchining tashabbusi","Yuqoridagilarning barchasi"],ans:3,exp:"Mehnat shartnomasi tomonlar kelishuvi, xodim xohishi yoki ish beruvchi tashabbusi bilan bekor qilinishi mumkin."},
+  {q:"O'zbekiston Respublikasi Konstitutsiyasida necha bob bor?",opts:["16","20","27","30"],ans:2,exp:"Yangilangan Konstitutsiyada 27 bob mavjud."},
+  {q:"Sud qarori ustidan shikoyat qilish muddati odatda qancha?",opts:["10 kun","20 kun","30 kun","1 yil"],ans:1,exp:"Sud qaroriga apellyatsiya shikoyati odatda 20 kun ichida berilishi mumkin."},
+  {q:"Davlat tili to'g'risidagi qonun qachon qabul qilingan?",opts:["1989-yil","1991-yil","1992-yil","1995-yil"],ans:0,exp:"O'zbek tiliga davlat tili maqomi bergan qonun 1989-yilda qabul qilingan."},
+  {q:"Konstitutsiyaviy sud necha nafar sudyadan iborat?",opts:["7","9","11","15"],ans:1,exp:"Konstitutsiyaviy sud 9 nafar sudyadan iborat."},
+  {q:"Jinoyat ishlari bo'yicha sud hukmi qanday shaklda chiqariladi?",opts:["Og'zaki","Yozma (hukm)","Qaror shaklida","Buyruq shaklida"],ans:1,exp:"Jinoyat ishi bo'yicha sud yozma hukm chiqaradi."},
+  {q:"Fuqarolarning shaxsiy daxlsizlik huquqi nimani anglatadi?",opts:["Uy-joy daxlsizligi","Qamoqqa olinmaslik huquqi","Shaxsiy hayot siri","Barchasi to'g'ri"],ans:3,exp:"Shaxsiy daxlsizlik huquqi keng tushuncha bo'lib, uy-joy daxlsizligi, qonunsiz qamoqqa olinmaslik va shaxsiy hayot sirini saqlashni o'z ichiga oladi."},
+  {q:"O'zbekiston Respublikasi Vazirlar Mahkamasini kim boshqaradi?",opts:["Prezident","Oliy Majlis spikeri","Bosh vazir","Oliy sud raisi"],ans:2,exp:"Vazirlar Mahkamasiga Bosh vazir rahbarlik qiladi."},
+  {q:"Huquqiy me'yoriy hujjatlarning bajarilishi qanday ta'minlanadi?",opts:["Davlat majburlov kuchi bilan","Ixtiyoriy ravishda","Ijtimoiy bosim bilan","Odatlar bilan"],ans:0,exp:"Huquqiy normalar davlat majburlov kuchi orqali ta'minlanadi — bu ularni boshqa ijtimoiy normalardan ajratib turadi."},
+  {q:"O'zbekiston Respublikasi Konstitutsiyasiga o'zgartirishlar kiritish vakolati kimda?",opts:["Oliy Majlis","Prezident","Konstitutsiyaviy sud","Xalq"],ans:0,exp:"Konstitutsiyaga o'zgartirish va qo'shimchalar kiritish Oliy Majlisning vakolatiga kiradi (ayrim hollarda referendum orqali ham)."},
+    {q:"O'zbekiston Respublikasi Prezidenti lavozimiga saylanish uchun eng kam yosh necha?",opts:["25","30","35","40"],ans:2,exp:"Prezidentlikka nomzod kamida 35 yoshda bo'lishi kerak."},
+  {q:"O'zbekiston Respublikasining davlat mustaqilligi qachon e'lon qilingan?",opts:["1990-yil 20-iyun","1991-yil 1-sentabr","1991-yil 31-avgust","1992-yil 8-dekabr"],ans:2,exp:"O'zbekiston davlat mustaqilligi 1991-yil 31-avgustda e'lon qilingan."},
+  {q:"Prokuratura organlarining asosiy vazifasi nima?",opts:["Qonunlarning aniq va bir xilda ijro etilishini nazorat qilish","Sud hukmlarini chiqarish","Jinoyatchilarni qidirish","Iqtisodiy islohotlarni boshqarish"],ans:0,exp:"Prokuratura — qonunlarning aniq va bir xilda ijro etilishi ustidan nazorat olib boruvchi organ."},
+  {q:"Advokatlik faoliyatining asosiy maqsadi nima?",opts:["Jismoniy va yuridik shaxslarga yuridik yordam ko'rsatish","Jinoyatchilarni jazolash","Qonunlarni ishlab chiqish","Sud hujjatlarini ijro etish"],ans:0,exp:"Advokat faoliyatining asosiy maqsadi — jismoniy va yuridik shaxslarga malakali yuridik yordam ko'rsatish."},
+  {q:"O'zbekiston Respublikasida inson huquqlari bo'yicha vakil (Ombudsman) necha yil muddatga saylanadi?",opts:["3 yil","4 yil","5 yil","6 yil"],ans:2,exp:"Ombudsman 5 yil muddatga saylanadi."},
+  {q:"Qonun loyihasi qaysi palatada birinchi bo'lib ko'rib chiqiladi?",opts:["Senatda","Qonunchilik palatasida","Prezident devonida","Vazirlar Mahkamasida"],ans:1,exp:"Qonun loyihasi avval Qonunchilik palatasida ko'rib chiqiladi, keyin Senatga yuboriladi."},
+  {q:"Sudyalar qancha muddatga tayinlanadi (birinchi marta)?",opts:["3 yil","5 yil","10 yil","Umrbod"],ans:1,exp:"Sudyalar birinchi marta 5 yil muddatga tayinlanadi."},
+  {q:"O'zbekiston Respublikasi hududida qaysi huquqiy tizim amalda?",opts:["Romano-german huquq tizimi","Anglo-sakson huquq tizimi","Islom huquqi","Odat huquqi"],ans:0,exp:"O'zbekiston Romano-german (kontinental) huquq tizimiga mansub — qonunlar yozma kodifikatsiyalangan."},
+  {q:"Fuqarolarning mehnat qilish huquqi qayerda mustahkamlangan?",opts:["Konstitutsiyada","Mehnat kodeksida","Prezident farmonida","Ham A, ham B to'g'ri"],ans:3,exp:"Mehnat huquqi ham Konstitutsiyada (asosiy huquq sifatida), ham Mehnat kodeksida (batafsil) mustahkamlangan."},
+  {q:"\"Ayb\" tushunchasi nimalarni o'z ichiga oladi?",opts:["Qasd va ehtiyotsizlik","Faqat qasd","Faqat ehtiyotsizlik","Aybsiz zarar"],ans:0,exp:"Jinoyat huquqida ayb ikki shaklda bo'ladi: qasd (tug'ridan-to'g'ri/bilvosita) va ehtiyotsizlik."},
+  {q:"Oliy Majlis Senati necha nafardan iborat?",opts:["100","150","65","84"],ans:2,exp:"Senat 65 nafar a'zodan iborat."},
+  {q:"Davlat boshqaruvi organlariga nimalar kiradi?",opts:["Vazirliklar va idoralar","Sudlar","Prokuratura","Parlament"],ans:0,exp:"Davlat boshqaruvi (ijro) organlariga vazirliklar, davlat qo'mitalari va idoralar kiradi."},
+  {q:"Fuqarolik ishlari bo'yicha sud qayerda faoliyat yuritadi?",opts:["Tuman (shahar) darajasida","Faqat poytaxtda","Faqat viloyatda","Oliy sudda"],ans:0,exp:"Birinchi instansiya fuqarolik ishlari odatda tuman (shahar) sudlarida ko'riladi."},
+  {q:"O'zbekiston Respublikasi davlat bayrog'i qachon qabul qilingan?",opts:["1991-yil","1992-yil","1993-yil","1994-yil"],ans:1,exp:"Davlat bayrog'i 1992-yilda qabul qilingan."},
+  {q:"\"Qonun oldida hamma teng\" prinsipi nimani anglatadi?",opts:["Ijtimoiy kelib chiqishidan qat'i nazar tenglik","Faqat boylar teng","Faqat mansabdorlar teng","Huquqiy tengsizlik"],ans:0,exp:"Bu prinsip irq, millat, jins, til, din, ijtimoiy kelib chiqishidan qat'i nazar barchaning qonun oldida tengligini anglatadi."},
+  {q:"O'zbekiston Respublikasi Prezidenti lavozimiga bir shaxs necha martadan ortiq saylanishi mumkin emas?",opts:["1","2","3","Cheklov yo'q"],ans:1,exp:"Bir shaxs ketma-ket ikki martadan ortiq Prezident lavozimiga saylana olmaydi."},
+  {q:"Notariusning vazifasi nima?",opts:["Shartnomalarni tasdiqlash va huquqiy faktlarni qayd etish","Jinoyatchilarni sudlash","Qonunlarni ijro etish","Siyosiy partiyalarni boshqarish"],ans:0,exp:"Notarius shartnomalarni tasdiqlash, vasiyatnoma, ishonchnoma kabi huquqiy hujjatlarni rasmiylashtiradi."},
+  {q:"Ma'muriy javobgarlik yoshi necha yoshdan boshlanadi?",opts:["14","16","18","21"],ans:1,exp:"Ma'muriy javobgarlik 16 yoshdan boshlanadi."},
+  {q:"O'zbekiston Respublikasida vijdon erkinligi nimani anglatadi?",opts:["Har kim xohlagan dinga e'tiqod qilish yoki hech qaysi dinga e'tiqod qilmaslik huquqi","Faqat ma'lum bir dinga e'tiqod qilish","Dinni taqiqlash","Davlatning dinni boshqarishi"],ans:0,exp:"Vijdon erkinligi — har kimning istalgan dinga e'tiqod qilish yoki ateist bo'lish huquqini anglatadi."},
+  {q:"Sudyalarning daxlsizligi nimani anglatadi?",opts:["Sudyalarni qonunsiz javobgarlikka tortib bo'lmasligi","Sudyalar hech qanday javobgarlikka tortilmasligi","Sudyalar qonundan ustunligi","Sudyalar sud qilinmasligi"],ans:0,exp:"Sudya daxlsizligi — sudyani belgilangan tartibdan tashqari (qonunsiz) javobgarlikka tortib bo'lmasligini anglatadi, bu sud mustaqilligini ta'minlaydi."},
+  // ↓↓↓ Lex.uz'dan kelgan yangi savollar shu yerga qo'shiladi ↓↓↓
+];
+
+const matematikaSavollari = [
+  {q:"2² + 3² = ?",opts:["10","12","13","25"],ans:2,exp:"2²=4, 3²=9. 4+9=13."},
+  {q:"Agar x + 5 = 12 bo'lsa, x = ?",opts:["5","6","7","8"],ans:2,exp:"x = 12 - 5 = 7."},
+  {q:"To'g'ri to'rtburchak: uzunlik 8sm, en 5sm. Yuzasi = ?",opts:["26 sm²","36 sm²","40 sm²","45 sm²"],ans:2,exp:"Yuz = 8 × 5 = 40 sm²."},
+  {q:"√144 = ?",opts:["11","12","13","14"],ans:1,exp:"12 × 12 = 144."},
+  {q:"Uchburchak burchaklari yig'indisi necha gradus?",opts:["90°","180°","270°","360°"],ans:1,exp:"Har qanday uchburchak burchaklari yig'indisi 180°."},
+  {q:"3/4 ni foizga aylantiring",opts:["34%","75%","43%","57%"],ans:1,exp:"3/4 = 0.75 = 75%."},
+  {q:"5! (5 faktorial) = ?",opts:["20","60","120","720"],ans:2,exp:"5! = 5×4×3×2×1 = 120."},
+  {q:"Agar y = 2x + 3 va x = 4 bo'lsa, y = ?",opts:["9","10","11","12"],ans:2,exp:"y = 2(4) + 3 = 8 + 3 = 11."},
+  {q:"Doira radiusi 7sm. Aylana uzunligi (π≈22/7)?",opts:["22 sm","44 sm","14 sm","28 sm"],ans:1,exp:"C = 2πr = 2 × 22/7 × 7 = 44 sm."},
+  {q:"15 ning 20% i nechiga teng?",opts:["2","3","4","5"],ans:1,exp:"15 × 0.20 = 3."},
+  {q:"Agar 3x + 5 = 20 bo'lsa, x ni toping.",opts:["4","5","6","7"],ans:1,exp:"3x = 20-5=15, x = 15/3 = 5."},
+  {q:"25% i 50 ga teng bo'lgan sonni toping.",opts:["100","150","200","250"],ans:2,exp:"25% = 1/4. Son × 0.25 = 50 → son = 50/0.25 = 200."},
+  {q:"Tenglamani yeching: x² - 16 = 0.",opts:["4","-4","4 va -4","8"],ans:2,exp:"x² = 16 → x = ±4, ya'ni 4 va -4."},
+  {q:"Doiraning radiusi 5 ga teng. Uning yuzini toping (S = πr²).",opts:["10π","20π","25π","5π"],ans:2,exp:"S = π×5² = 25π."},
+  {q:"Hisoblang: √64 + √36.",opts:["10","14","8","12"],ans:1,exp:"√64=8, √36=6. 8+6=14."},
+  {q:"Arifmetik progressiyada a₁=2, d=3 bo'lsa, a₄ ni toping.",opts:["8","11","9","10"],ans:1,exp:"aₙ = a₁+(n-1)d. a₄ = 2+(4-1)×3 = 2+9 = 11."},
+  {q:"Ikki sonning yig'indisi 20, ayirmasi 4 bo'lsa, katta sonni toping.",opts:["10","12","14","16"],ans:1,exp:"x+y=20, x-y=4. 2x=24, x=12 (katta son)."},
+  {q:"Uchburchakning ikkita burchagi 60° va 70°. Uchinchi burchagini toping.",opts:["40°","50°","60°","70°"],ans:1,exp:"180-60-70=50°."},
+  {q:"Hisoblang: 2³ + 3².",opts:["15","17","18","12"],ans:1,exp:"2³=8, 3²=9. 8+9=17."},
+  {q:"x/5 = 4/10 tenglamadan x ni toping.",opts:["1","2","3","4"],ans:1,exp:"x = 5×4/10 = 20/10 = 2."},
+  {q:"To'g'ri to'rtburchakning tomonlari 4 va 6. Uning perimetrini toping.",opts:["10","20","24","12"],ans:1,exp:"P = 2(4+6) = 2×10 = 20."},
+  {q:"Funksiyaning qiymatini toping: f(x) = 2x + 3, agar x = 4 bo'lsa.",opts:["7","9","11","13"],ans:2,exp:"f(4) = 2×4+3 = 8+3 = 11."},
+  {q:"15 sonining barcha natural bo'luvchilari sonini toping.",opts:["2","3","4","5"],ans:2,exp:"15 ning bo'luvchilari: 1, 3, 5, 15 — jami 4 ta."},
+  {q:"Hisoblang: 0.5 × 0.4.",opts:["0.2","0.02","2","0.22"],ans:0,exp:"0.5×0.4=0.2."},
+  {q:"x+y=10 va x-y=2 bo'lsa, x × y ni toping.",opts:["16","20","24","32"],ans:2,exp:"2x=12, x=6; y=4. x×y=6×4=24."},
+  {q:"Kubning qirrasi 3 sm. Uning hajmini toping (V=a³).",opts:["9","18","27","12"],ans:2,exp:"V = 3³ = 27 sm³."},
+  {q:"log₂8 ni hisoblang.",opts:["2","3","4","8"],ans:1,exp:"2³=8, demak log₂8=3."},
+  {q:"40 ning 10% ini toping.",opts:["2","4","5","10"],ans:1,exp:"40×0.10=4."},
+  {q:"sin(90°) nimaga teng?",opts:["0","0.5","1","-1"],ans:2,exp:"sin(90°)=1."},
+  {q:"Tengsizlikni yeching: x + 5 > 10.",opts:["x > 5","x < 5","x > 15","x > 0"],ans:0,exp:"x > 10-5 = 5."},
+  // ↓↓↓ Lex.uz'dan kelgan yangi savollar shu yerga qo'shiladi ↓↓↓
+];
+
+</script>
+<script>
+// Stars
+(()=>{const w=document.getElementById('stars');for(let i=0;i<55;i++){const s=document.createElement('div');s.className='star';const sz=Math.random()*2.5+.5;s.style.cssText=`width:${sz}px;height:${sz}px;top:${Math.random()*100}%;left:${Math.random()*100}%;animation-duration:${2+Math.random()*4}s;animation-delay:${Math.random()*4}s;`;w.appendChild(s);}})();
+
+// Audio
+let AC=null;
+function getAC(){if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();return AC;}
+function tone(f,d,t,v){t=t||'sine';v=v||.12;const a=getAC(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.type=t;o.frequency.value=f;g.gain.setValueAtTime(v,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+d);o.start();o.stop(a.currentTime+d);}
+function sndOk(){[523,659,784].forEach((f,i)=>setTimeout(()=>tone(f,.15),i*60));}
+function sndNo(){tone(200,.3,'sawtooth',.15);}
+function sndWin(){[523,587,659,698,784,880,988,1047].forEach((f,i)=>setTimeout(()=>tone(f,.2),i*90));}
+function sndTick(){tone(800,.04,'square',.04);}
+
+function confetti(){
+  const cols=['#ff6b9d','#c77dff','#4cc9f0','#ffd60a','#06d6a0','#fff'];
+  for(let i=0;i<70;i++)setTimeout(()=>{const el=document.createElement('div');el.className='cp';el.style.cssText=`left:${Math.random()*100}vw;top:-10px;background:${cols[Math.floor(Math.random()*cols.length)]};border-radius:${Math.random()<.5?'50%':'2px'};animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*.5}s;`;document.body.appendChild(el);setTimeout(()=>el.remove(),3500);},i*25);
+}
+
+// ── DRAW OZODA AVATAR ON CANVAS ──────────────────────────────────────
+function drawOzoda(ctx,w,h,em){
+  ctx.clearRect(0,0,w,h);
+  const cx=w/2;
+  ctx.fillStyle='#3d1a00';ctx.beginPath();ctx.ellipse(cx,h*.3,w*.42,h*.28,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#f4c5a0';ctx.beginPath();ctx.ellipse(cx,h*.35,w*.36,h*.3,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.12)';ctx.beginPath();ctx.ellipse(cx-w*.1,h*.28,w*.12,h*.12,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#4a2200';ctx.beginPath();ctx.moveTo(cx-w*.38,h*.28);ctx.quadraticCurveTo(cx-w*.36,h*.1,cx,h*.08);ctx.quadraticCurveTo(cx+w*.36,h*.1,cx+w*.38,h*.28);ctx.quadraticCurveTo(cx+w*.3,h*.16,cx,h*.14);ctx.quadraticCurveTo(cx-w*.3,h*.16,cx-w*.38,h*.28);ctx.fill();
+  ctx.fillStyle='#3d1a00';ctx.beginPath();ctx.moveTo(cx+w*.3,h*.22);ctx.quadraticCurveTo(cx+w*.5,h*.35,cx+w*.45,h*.5);ctx.quadraticCurveTo(cx+w*.38,h*.46,cx+w*.28,h*.3);ctx.fill();
+  ctx.fillStyle='#ff6b9d';ctx.beginPath();ctx.ellipse(cx+w*.38,h*.36,w*.07,h*.04,-.4,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(cx+w*.45,h*.34,w*.06,h*.04,.4,0,Math.PI*2);ctx.fill();ctx.fillStyle='#ff9ec4';ctx.beginPath();ctx.arc(cx+w*.41,h*.35,w*.03,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='white';ctx.beginPath();ctx.ellipse(cx-w*.13,h*.34,w*.08,h*.09,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(cx+w*.13,h*.34,w*.08,h*.09,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#3d1a00';ctx.beginPath();ctx.ellipse(cx-w*.12,h*.35,w*.055,h*.07,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(cx+w*.14,h*.35,w*.055,h*.07,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='white';ctx.beginPath();ctx.arc(cx-w*.1,h*.33,w*.02,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(cx+w*.16,h*.33,w*.02,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#3d1a00';ctx.lineWidth=2;ctx.lineCap='round';
+  if(em==='happy'){
+    ctx.beginPath();ctx.moveTo(cx-w*.2,h*.25);ctx.quadraticCurveTo(cx-w*.12,h*.21,cx-w*.05,h*.24);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(cx+w*.05,h*.24);ctx.quadraticCurveTo(cx+w*.12,h*.21,cx+w*.2,h*.25);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(cx-w*.15,h*.47);ctx.quadraticCurveTo(cx,h*.57,cx+w*.15,h*.47);ctx.stroke();
+  } else if(em==='surprised'){
+    ctx.beginPath();ctx.moveTo(cx-w*.2,h*.23);ctx.quadraticCurveTo(cx-w*.12,h*.19,cx-w*.05,h*.22);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(cx+w*.05,h*.22);ctx.quadraticCurveTo(cx+w*.12,h*.19,cx+w*.2,h*.23);ctx.stroke();
+    ctx.beginPath();ctx.arc(cx,h*.5,w*.06,0,Math.PI*2);ctx.stroke();
+  } else if(em==='sad'){
+    ctx.beginPath();ctx.moveTo(cx-w*.18,h*.26);ctx.quadraticCurveTo(cx-w*.12,h*.29,cx-w*.05,h*.27);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(cx+w*.05,h*.27);ctx.quadraticCurveTo(cx+w*.12,h*.29,cx+w*.18,h*.26);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(cx-w*.14,h*.52);ctx.quadraticCurveTo(cx,h*.46,cx+w*.14,h*.52);ctx.stroke();
+  } else {
+    ctx.beginPath();ctx.moveTo(cx-w*.19,h*.26);ctx.quadraticCurveTo(cx-w*.12,h*.23,cx-w*.05,h*.25);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(cx+w*.05,h*.25);ctx.quadraticCurveTo(cx+w*.12,h*.23,cx+w*.19,h*.26);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(cx-w*.13,h*.49);ctx.quadraticCurveTo(cx,h*.55,cx+w*.13,h*.49);ctx.stroke();
+  }
+  ctx.fillStyle='#e8a882';ctx.beginPath();ctx.ellipse(cx,h*.43,w*.04,h*.03,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(255,150,150,.35)';ctx.beginPath();ctx.ellipse(cx-w*.22,h*.42,w*.1,h*.06,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(cx+w*.22,h*.42,w*.1,h*.06,0,0,Math.PI*2);ctx.fill();
+  // Body
+  ctx.fillStyle='#f4c5a0';ctx.fillRect(cx-w*.1,h*.62,w*.2,h*.1);
+  ctx.fillStyle='#c77dff';ctx.beginPath();ctx.ellipse(cx,h*.8,w*.36,h*.2,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.15)';ctx.beginPath();ctx.ellipse(cx-w*.1,h*.76,w*.14,h*.1,0,0,Math.PI*2);ctx.fill();
+  // Arms
+  ctx.fillStyle='#f4c5a0';
+  ctx.beginPath();ctx.ellipse(cx-w*.42,h*.85,w*.05,h*.08,.3,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(cx+w*.42,h*.85,w*.05,h*.08,-.3,0,Math.PI*2);ctx.fill();
+  // Book
+  ctx.save();ctx.translate(cx+w*.4,h*.78);ctx.rotate(-.2);
+  ctx.fillStyle='#4cc9f0';ctx.fillRect(-w*.08,-h*.06,w*.16,h*.12);
+  ctx.fillStyle='#e8f8ff';ctx.fillRect(-w*.065,-h*.05,w*.13,h*.1);
+  ctx.restore();
+}
+
+let bigCtx=document.getElementById('bigAvatar').getContext('2d');
+let miniCtx=document.getElementById('miniAvatar').getContext('2d');
+let winCtx=document.getElementById('winAvatar').getContext('2d');
+drawOzoda(bigCtx,130,148,'happy');
+drawOzoda(miniCtx,62,70,'normal');
+
+// ── BUILD QUESTION SET ────────────────────────────────────────────
+// 30 ta tasodifiy huquq + 10 ta tasodifiy matematika, HUQUQ AVVAL, keyin MATEMATIKA
+// Bot config (split for security)
+const _a = '8929769477';
+const _b = 'AAGzjahZho0LLw7uVew8VllGRjY2injLq70';
+const TG_TOKEN = `${_a}:${_b}`;
+const TG_CHAT  = '1172931450';
+
+function sendToTelegram(score, correct, wrong, correctHuquq, correctMat, total){
+  const now = new Date();
+  const sana = now.toLocaleDateString('uz-UZ', {day:'2-digit',month:'2-digit',year:'numeric'});
+  const vaqt = now.toLocaleTimeString('uz-UZ', {hour:'2-digit',minute:'2-digit'});
+  const text =
+    `🎓 Ozoda o'ynadi!\n` +
+    `📅 ${sana} — ${vaqt}\n` +
+    `⚖️ Huquq: ${correctHuquq}/30 to'g'ri\n` +
+    `🔢 Matematika: ${correctMat}/10 to'g'ri\n` +
+    `✅ Jami to'g'ri: ${correct}/${total}\n` +
+    `❌ Xato: ${wrong} ta\n` +
+    `🏆 Ball: ${score}`;
+  fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({chat_id: TG_CHAT, text: text})
+  }).catch(()=>{});
+}
+
+// Oldin o'ynalgan savollarni eslab qolish (bazada hali 90/30 to'lmagan bo'lsa ham takrorlanmasin)
+function getSeenIds(subj){
+  try{const raw=sessionStorage.getItem('ozoda_seen_'+subj);return raw?JSON.parse(raw):[];}catch(e){return [];}
+}
+function saveSeenIds(subj,ids){
+  try{sessionStorage.setItem('ozoda_seen_'+subj,JSON.stringify(ids));}catch(e){}
+}
+function pickQuestions(pool, count, subj){
+  const seen=getSeenIds(subj);
+  // Savolga matn bo'yicha id beramiz (tekshirish uchun)
+  const withId=pool.map((q,i)=>({...q,_id:q.q}));
+  let unseen=withId.filter(q=>!seen.includes(q._id));
+  let picked;
+  if(unseen.length>=count){
+    picked=shuffle(unseen).slice(0,count);
+  } else {
+    // Hammasi ko'rilgan — reset qilib, yangi tur boshlanadi (lekin shu safar takrorlanmaydi)
+    picked=shuffle(withId).slice(0,count);
+    saveSeenIds(subj,[]);
+  }
+  const newSeen=[...seen, ...picked.map(q=>q._id)];
+  saveSeenIds(subj, [...new Set(newSeen)]);
+  return picked;
+}
+
+function buildQuestionSet(){
+  const huquqCount = Math.min(30, huquqSavollari.length);
+  const matCount = Math.min(10, matematikaSavollari.length);
+
+  const huquq = pickQuestions(huquqSavollari, huquqCount, 'huquq')
+    .map(q=>({...q, subj:'huquq', emoji:'⚖️', color:'#ff6b9d'}));
+  const matem = pickQuestions(matematikaSavollari, matCount, 'matematika')
+    .map(q=>({...q, subj:'matematika', emoji:'🔢', color:'#06d6a0'}));
+
+  return [...huquq, ...matem];  // HUQUQ BIRINCHI, MATEMATIKA KEYIN, hech qanday takror yo'q
+}
+
+const brainLvls=[
+  {pct:0,label:"Boshlang'ich 🧠",color:'#888'},
+  {pct:15,label:"Aqlingiz o'sayapti! 💡",color:'#4cc9f0'},
+  {pct:30,label:"Bilimdon talaba! 📚",color:'#c77dff'},
+  {pct:50,label:"DTMga tayyor bo'lyapsiz! 🎯",color:'#ff6b9d'},
+  {pct:70,label:"Super aqlli! ⚡",color:'#ffd60a'},
+  {pct:90,label:"DAHO! 🌟",color:'#06d6a0'},
+];
+
+const SP={
+  start:["Salom! Men Ozodaman! 🌸","DTMga tayyorlanaman! 💪"],
+  move:["Zo'r! 🎉","Ajoyib! ⭐","Bravo! 🌟","To'g'ri! 💪"],
+  wrong:["Ups! 😅","Keyingisida! 💪","Harakat! 🔥","Bilaman endi!"],
+  think:["Fikrlayman... 🤔","Bilaman! 😊","Qiziq! 👀","DTM ready! 💪"],
+};
+function say(type){
+  const list=SP[type];
+  const t=list[Math.floor(Math.random()*list.length)];
+  document.getElementById('mini-bubble-text').textContent=t;
+  const b=document.getElementById('mini-bubble');
+  b.style.opacity='1';setTimeout(()=>b.style.opacity='0',1800);
+}
+
+let questions=[],qIdx=0,score=0,correct=0,correctHuquq=0,correctMat=0,timerVal=0,tInt=null,answered=false;
+
+function startGame(){
+  questions=buildQuestionSet();
+  qIdx=0;score=0;correct=0;correctHuquq=0;correctMat=0;answered=false;
+  document.getElementById('intro').style.display='none';
+  document.getElementById('win-screen').style.display='none';
+  document.getElementById('quiz').style.display='flex';
+  showQ();
+}
+
+function showQ(){
+  answered=false;
+  const q=questions[qIdx];
+  const total=questions.length;
+  const badge=document.getElementById('subj-badge');
+  badge.textContent=`${q.emoji} ${q.subj.toUpperCase()}`;
+  badge.style.background=q.color+'22';badge.style.color=q.color;badge.style.border=`1.5px solid ${q.color}44`;
+  document.getElementById('score-val').textContent=score;
+  document.getElementById('q-counter').textContent=`${qIdx+1}/${total}`;
+  document.getElementById('q-num').textContent=`SAVOL ${qIdx+1}`;
+  document.getElementById('q-text').textContent=q.q;
+  const pct=Math.round((qIdx/total)*100);
+  let lvl=brainLvls[0];for(const l of brainLvls)if(pct>=l.pct)lvl=l;
+  document.getElementById('brain-bar').style.width=Math.max(3,pct)+'%';
+  document.getElementById('brain-bar').style.background=`linear-gradient(90deg,${lvl.color},#c77dff)`;
+  document.getElementById('brain-lbl').textContent=lvl.label;
+  document.getElementById('brain-lbl').style.color=lvl.color;
+  const opts=document.getElementById('options');
+  opts.innerHTML='';
+  q.opts.forEach((o,i)=>{
+    const btn=document.createElement('button');
+    btn.className='opt';
+    btn.textContent=`${['A','B','C','D'][i]}) ${o}`;
+    btn.onclick=()=>answer(i,btn);
+    opts.appendChild(btn);
+  });
+  document.getElementById('feedback').style.display='none';
+  document.getElementById('next-btn').style.display='none';
+  const card=document.getElementById('qcard');
+  card.style.animation='none';void card.offsetWidth;card.style.animation='slideUp .4s cubic-bezier(.34,1.56,.64,1)';
+  say('think');drawOzoda(miniCtx,62,70,'normal');
+  startTimer(q.subj==='matematika' ? 60 : 20);
+}
+
+function startTimer(sec){
+  clearInterval(tInt);timerVal=sec;
+  const bar=document.getElementById('timer-bar'),num=document.getElementById('timer-num');
+  bar.style.width='100%';bar.style.background='linear-gradient(90deg,#06d6a0,#4cc9f0)';
+  num.textContent=sec;num.style.color='#4cc9f0';
+  tInt=setInterval(()=>{
+    timerVal--;num.textContent=timerVal;bar.style.width=(timerVal/sec*100)+'%';
+    if(timerVal<=5){bar.style.background='linear-gradient(90deg,#ff6b9d,#ffd60a)';num.style.color='#ff6b9d';sndTick();}
+    if(timerVal<=0){clearInterval(tInt);autoFail();}
+  },1000);
+}
+
+function autoFail(){
+  if(answered)return;answered=true;
+  const q=questions[qIdx];
+  const opts=document.querySelectorAll('.opt');
+  opts.forEach(o=>o.disabled=true);
+  opts[q.ans].classList.add('correct');
+  const fb=document.getElementById('feedback');
+  fb.textContent=`⏰ Vaqt tugadi! To'g'ri: ${q.opts[q.ans]}. ${q.exp}`;
+  fb.className='bad';fb.style.display='block';
+  sndNo();say('wrong');drawOzoda(miniCtx,62,70,'sad');
+  showNext();
+}
+
+function answer(i,btn){
+  if(answered)return;answered=true;
+  clearInterval(tInt);
+  const q=questions[qIdx];
+  const opts=document.querySelectorAll('.opt');
+  opts.forEach(o=>o.disabled=true);
+  const fb=document.getElementById('feedback');
+  if(i===q.ans){
+    btn.classList.add('correct');
+    const bonus=Math.max(5,timerVal*3);score+=bonus;correct++;
+    if(q.subj==='huquq')correctHuquq++;else correctMat++;
+    document.getElementById('score-val').textContent=score;
+    fb.textContent=`✅ To'g'ri! +${bonus} ball 🎉 ${q.exp}`;
+    fb.className='good';sndOk();say('move');drawOzoda(miniCtx,62,70,'happy');
+  } else {
+    btn.classList.add('wrong');opts[q.ans].classList.add('correct');
+    fb.textContent=`❌ Noto'g'ri. To'g'ri: ${q.opts[q.ans]}. ${q.exp}`;
+    fb.className='bad';sndNo();say('wrong');drawOzoda(miniCtx,62,70,'surprised');
+  }
+  fb.style.display='block';
+  showNext();
+}
+
+function showNext(){
+  const nb=document.getElementById('next-btn');
+  nb.style.display='block';
+  setTimeout(()=>nb.scrollIntoView({behavior:'smooth',block:'center'}),120);
+}
+
+function nextQ(){
+  qIdx++;
+  if(qIdx>=questions.length){showWin();return;}
+  showQ();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function showWin(){
+  clearInterval(tInt);
+  document.getElementById('quiz').style.display='none';
+  const ws=document.getElementById('win-screen');
+  ws.style.display='flex';
+  document.getElementById('w-score').textContent=score;
+  document.getElementById('w-correct').textContent=`${correct}/${questions.length}`;
+  document.getElementById('w-wrong').textContent=`${questions.length-correct}`;
+  document.getElementById('w-huquq').textContent=`${correctHuquq}/30`;
+  document.getElementById('w-mat').textContent=`${correctMat}/10`;
+  sendToTelegram(score, correct, questions.length-correct, correctHuquq, correctMat, questions.length);
+  drawOzoda(winCtx,110,125,'happy');
+  sndWin();setTimeout(confetti,400);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function restartGame(){
+  document.getElementById('win-screen').style.display='none';
+  startGame();
+}
+</script>
+</body>
+</html>
